@@ -1,31 +1,862 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Crypto Farmer</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>CyberCoin Tapper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@400;500;700&family=Electrolize&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #0d0d1a;
+            --primary-text: #e0e0e0;
+            --cyber-cyan: #00f2ff;
+            --cyber-magenta: #ff00ff;
+            --cyber-yellow: #fff200;
+            --container-bg: rgba(20, 20, 40, 0.7);
+            --border-color: rgba(0, 242, 255, 0.3);
+            --disabled-bg: rgba(50, 50, 70, 0.5);
+            --disabled-text: #888;
+            --completed-task-bg: rgba(40, 60, 40, 0.7);
+            --completed-task-text: #90EE90;
+            --player-highlight-bg: rgba(0, 242, 255, 0.2);
+            --player-highlight-border: var(--cyber-cyan);
+            --gold-color: #FFD700;
+            --silver-color: #C0C0C0;
+            --bronze-color: #CD7F32;
+            --cyber-gem-color: #00FF7F; /* Spring Green for Gems */
+        }
+        html, body {
+            overscroll-behavior: none; /* Prevents pull-to-refresh on mobile */
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            overflow: hidden; /* Hide scrollbars, manage content with overflow-y-auto on specific divs */
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+       .font-orbitron { font-family: 'Orbitron', sans-serif; }
+       .font-electrolize { font-family: 'Electrolize', sans-family; }
+       
+       /* Animated Background */
+       .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at top left, rgba(29, 78, 216, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at bottom right, rgba(109, 40, 217, 0.15) 0%, transparent 40%),
+                        linear-gradient(to bottom, #0A0A0F, #1A1A2A);
+            overflow: hidden;
+        }
+        .background-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(30, 58, 138, 0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 58, 138, 0.2) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.3;
+            animation: moveGrid 60s linear infinite;
+        }
+        .background-container::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 30% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            animation: pulseGlow 30s ease-in-out infinite alternate;
+        }
+        @keyframes moveGrid {
+            from { transform: translate(0, 0); }
+            to { transform: translate(50px, 50px); }
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        
+       /* Pulse animation for the main tap logo */
+       @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(0, 242, 255, 0.7); }
+            100% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
+        }
+        
+       /* Floating text animation for coin taps */
+       .floating-text {
+            position: absolute;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary-text);
+            opacity: 1;
+            animation: floatUp 1.5s ease-out forwards;
+            pointer-events: none; /* Allows clicks to pass through */
+            text-shadow: 0 0 10px var(--cyber-yellow);
+            z-index: 20; /* Above particles */
+        }
+        @keyframes floatUp {
+            from { transform: translateY(0) scale(1); opacity: 1; }
+            to { transform: translateY(-150px) scale(0.5); opacity: 0; }
+        }
+
+        /* Particle animation for taps */
+        .tap-particle {
+            position: absolute;
+            background-color: var(--cyber-cyan);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleFadeOut 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 15; /* Below floating text */
+        }
+        @keyframes particleFadeOut {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(0.5); opacity: 0; }
+        }
+        
+       /* Active state for navigation buttons */
+       .nav-button.active i,.nav-button.active span {
+            color: var(--cyber-cyan);
+            text-shadow: 0 0 5px var(--cyber-cyan);
+        }
+        
+       /* Progress bar fill for energy and league */
+       .progress-bar-fill {
+            background: linear-gradient(90deg, var(--cyber-magenta), var(--cyber-cyan));
+            transition: width 0.3s ease-in-out;
+        }
+        
+       /* Modal fade-in animation */
+       .modal {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+       /* Disabled button style */
+       .disabled-button {
+            background-color: var(--disabled-bg);
+            color: var(--disabled-text);
+            cursor: not-allowed;
+            border-color: #444;
+        }
+        
+       /* Turbo mode indicator text animation */
+       .turbo-active-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--cyber-yellow);
+            text-shadow: 0 0 10px var(--cyber-yellow), 0 0 20px var(--cyber-yellow);
+            animation: glitch-text 0.5s infinite alternate;
+            z-index: 10;
+        }
+        @keyframes glitch-text {
+            0% { transform: translate(-50%, -50%) skewX(0deg); opacity: 1; }
+            25% { transform: translate(-52%, -48%) skewX(5deg); opacity: 0.8; }
+            50% { transform: translate(-48%, -52%) skewX(-5deg); opacity: 1; }
+            75% { transform: translate(-51%, -49%) skewX(3deg); opacity: 0.9; }
+            100% { transform: translate(-50%, -50%) skewX(0deg); opacity: 1; }
+        }
+
+        /* Timed Event Indicator */
+        .event-active-indicator {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--cyber-magenta);
+            text-shadow: 0 0 10px var(--cyber-magenta), 0 0 20px var(--cyber-magenta);
+            animation: pulse-event 1s infinite alternate;
+            z-index: 10;
+        }
+        @keyframes pulse-event {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.9; }
+        }
+        
+       /* Toast notification styles */
+       .toast {
+            background-color: rgba(30, 30, 50, 0.9);
+            border: 1px solid var(--border-color);
+            color: var(--primary-text);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+       .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Styles for completed tasks/challenges */
+        .task-completed, .challenge-completed {
+            background-color: var(--completed-task-bg) !important;
+            border-color: var(--completed-task-text) !important;
+        }
+        .task-completed button, .challenge-completed button {
+            background-color: var(--disabled-bg) !important;
+            color: var(--disabled-text) !important;
+            cursor: not-allowed !important;
+        }
+        
+        /* Chat Modal Specific Styles */
+        .chat-modal {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            background-color: var(--bg-color);
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(100%); /* Start off-screen */
+            transition: transform 0.3s ease-out;
+            z-index: 70; /* Above other modals */
+            border-top: 2px solid var(--cyber-cyan);
+        }
+        .chat-modal.open {
+            transform: translateY(0); /* Slide in */
+        }
+        @media (min-width: 768px) {
+            .chat-modal {
+                width: 400px;
+                height: 600px;
+                bottom: 2rem;
+                right: 2rem;
+                border-radius: 1rem;
+                border: 2px solid var(--cyber-cyan);
+            }
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .chat-message {
+            max-width: 80%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.75rem;
+            word-wrap: break-word;
+        }
+        .chat-message.user {
+            background-color: var(--cyber-cyan);
+            color: var(--bg-color);
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+        .chat-message.support {
+            background-color: var(--container-bg);
+            color: var(--primary-text);
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+            border: 1px solid var(--border-color);
+        }
+        .chat-input-container {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            gap: 0.5rem;
+        }
+        .chat-input {
+            flex-grow: 1;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--cyber-cyan);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: var(--primary-text);
+            outline: none;
+        }
+        .chat-send-button {
+            background-color: var(--cyber-magenta);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .chat-send-button:hover {
+            background-color: #e600e6;
+        }
+        .chat-topic-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            justify-content: center;
+        }
+        .chat-topic-button {
+            background-color: rgba(0, 242, 255, 0.2);
+            color: var(--cyber-cyan);
+            border: 1px solid var(--cyber-cyan);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .chat-topic-button:hover {
+            background-color: rgba(0, 242, 255, 0.4);
+        }
+        
+        /* Social Media Section Styles */
+        .social-media-footer {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            position: relative;
+            z-index: 50; /* Ensure it's above other elements but below modals */
+        }
+
+        .social-media-footer a {
+            color: var(--primary-text);
+            font-size: 1.8rem;
+            transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .social-media-footer a:hover {
+            color: var(--cyber-cyan);
+            transform: scale(1.1);
+        }
+
+        .social-media-footer button { /* For music button */
+            background: none;
+            border: none;
+            color: var(--primary-text);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .social-media-footer button:hover {
+            color: var(--cyber-cyan);
+            transform: scale(1.1);
+        }
+        
+        /* Progress bar for challenges/achievements */
+        .challenge-progress-bar {
+            width: 100%;
+            background-color: #333;
+            border-radius: 5px;
+            height: 8px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        .challenge-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff00ff, #00f2ff);
+            border-radius: 5px;
+            transition: width 0.3s ease-in-out;
+        }
+        
+        /* Adjusted positioning and z-index for chat FAB */
+        #chat-fab {
+            bottom: calc(4rem + 20px); /* Height of nav (p-2 + some margin) + social media footer (approx 4rem) + extra space */
+            right: 1rem; /* Adjusted for mobile view */
+            z-index: 60; /* Higher than nav (55) and social media footer (50) */
+        }
+        @media (min-width: 768px) {
+            #chat-fab {
+                right: 2rem; /* Restore desktop position */
+            }
+        }
+
+        nav {
+            z-index: 55; /* Ensure nav is above social media footer */
+        }
+        #toast-container {
+            z-index: 65; /* Toasts should be above chat FAB */
+        }
+        
+        /* Style for the work in progress message when placed within the flow */
+        #work-in-progress-message {
+            background-color: rgba(255, 255, 0, 0.1);
+            color: var(--cyber-yellow);
+            border: 1px solid var(--cyber-yellow);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+            max-width: 90%;
+            width: fit-content;
+            text-align: center;
+            margin: 1rem auto;
+            z-index: 1;
+        }
+
+        @media (min-width: 768px) {
+            #work-in-progress-message {
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Language button styles */
+        .lang-button {
+            background-color: rgba(0, 242, 255, 0.2);
+            color: var(--cyber-cyan);
+            border: 1px solid var(--cyber-cyan);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: bold;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .lang-button.active {
+            background-color: var(--cyber-cyan);
+            color: var(--bg-color);
+        }
+        .lang-button:hover:not(.active) {
+            background-color: rgba(0, 242, 255, 0.4);
+        }
+        
+        /* Daily Rewards Calendar styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7 days in a week */
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .calendar-day {
+            background-color: rgba(30, 30, 50, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            min-height: 60px; /* Ensure consistent height */
+        }
+        .calendar-day.claimed {
+            background-color: var(--completed-task-bg);
+            border-color: var(--completed-task-text);
+            color: var(--completed-task-text);
+        }
+        .calendar-day.current-day {
+            border-color: var(--cyber-yellow);
+            box-shadow: 0 0 10px rgba(255, 242, 0, 0.5);
+        }
+        .calendar-day button {
+            background-color: var(--cyber-cyan);
+            color: var(--bg-color);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.3rem;
+            font-weight: bold;
+            margin-top: 0.2rem;
+            font-size: 0.65rem;
+        }
+        .calendar-day button.disabled-button {
+            background-color: var(--disabled-bg);
+            color: var(--disabled-text);
+        }
+        .calendar-day .reward-icon {
+            font-size: 1.2rem;
+            margin-bottom: 0.2rem;
+            color: var(--cyber-yellow);
+        }
+        .calendar-day .gem-icon { /* New style for gem reward icon */
+            color: var(--cyber-gem-color);
+        }
+        
+        /* Logo Specific Styles - Adjusted for tap functionality */
+        .logo-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: linear-gradient(to bottom right, #007bff, #00c0ff); /* Adjusted from original to fit theme */
+            border: 4px solid var(--cyber-cyan);
+            border-radius: 9999px; /* Full rounded */
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.7);
+            transition: all 0.3s ease-in-out;
+            transform: scale(1);
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+            width: 16rem; /* w-64 */
+            height: 16rem; /* h-64 */
+            animation: pulse 2s infinite;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 45px var(--cyber-magenta);
+        }
+        
+        /* Active state for tapping */
+        .logo-container:active {
+            transform: scale(0.95);
+        }
+
+        .logo-text {
+            font-family: 'Electrolize', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            text-shadow: 0 0 10px var(--cyber-cyan), 0 0 20px var(--cyber-cyan), 0 0 30px var(--cyber-cyan);
+            transition: text-shadow 0.3s ease-in-out;
+            z-index: 1;
+        }
+
+        .logo-container:hover .logo-text {
+            text-shadow: 0 0 15px var(--cyber-magenta), 0 0 30px var(--cyber-magenta), 0 0 45px var(--cyber-magenta);
+        }
+
+        .logo-icon {
+            font-size: 4rem;
+            color: var(--cyber-magenta);
+            margin-bottom: 0.75rem;
+            text-shadow: 0 0 15px var(--cyber-magenta), 0 0 30px var(--cyber-magenta);
+            animation: pulse-icon 2s infinite alternate;
+            transition: color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
+            z-index: 1; /* Ensure icon is above glitch effect */
+        }
+
+        @keyframes pulse-icon {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.05); opacity: 0.9; }
+        }
+
+        /* Glitch Effect for the logo */
+        .glitch-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s ease-out;
+            border-radius: 9999px; /* Inherit from logo-container */
+        }
+
+        .logo-container:hover .glitch-effect {
+            opacity: 1;
+        }
+
+        .glitch-effect::before,
+        .glitch-effect::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--cyber-cyan);
+            font-family: 'Electrolize', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 10px var(--cyber-cyan);
+        }
+        .glitch-effect::before {
+            clip: rect(0, 9999px, 0, 0);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+        .glitch-effect::after {
+            clip: rect(0, 9999px, 0, 0);
+            animation: glitch-anim-2 2s infinite linear alternate-reverse;
+        }
+
+        /* Glitch animations */
+        @keyframes glitch-anim-1 {
+            0% { clip: rect(20px, 9999px, 50px, 0); transform: skew(0.5deg); }
+            20% { clip: rect(100px, 9999px, 120px, 0); transform: skew(-0.8deg); }
+            40% { clip: rect(150px, 9999px, 180px, 0); transform: skew(0.3deg); }
+            60% { clip: rect(200px, 9999px, 230px, 0); transform: skew(-0.6deg); }
+            80% { clip: rect(250px, 9999px, 280px, 0); transform: skew(0.2deg); }
+            100% { clip: rect(20px, 9999px, 50px, 0); transform: skew(-0.4deg); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(10px, 9999px, 40px, 0); transform: skew(-0.3deg); }
+            25% { clip: rect(70px, 9999px, 90px, 0); transform: skew(0.6deg); }
+            50% { clip: rect(130px, 9999px, 160px, 0); transform: skew(-0.2deg); }
+            75% { clip: rect(190px, 9999px, 220px, 0); transform: skew(0.4deg); }
+            100% { clip: rect(240px, 9999px, 270px, 0); transform: skew(-0.7deg); }
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 768px) {
+            .logo-text.top {
+                font-size: 1.8rem;
+            }
+            .logo-text.bottom {
+                font-size: 1.2rem;
+                margin-top: -0.2rem;
+            }
+            .logo-icon {
+                font-size: 3rem;
+                margin-bottom: 0.4rem;
+            }
+            .logo-container {
+                padding: 1rem;
+                width: 12rem; /* Adjusted for mobile */
+                height: 12rem; /* Adjusted for mobile */
+            }
+            .glitch-effect::before,
+            .glitch-effect::after {
+                font-size: 1.8rem; /* Adjusted for mobile */
+            }
+        }
+    </style>
 </head>
-<body>
-  <div class="game-container">
-    <h1>Crypto Farmer 💰</h1>
-    <p>Twoje CryptoCoins: <span id="coins">0</span></p>
-    <button id="farmBtn">Zbierz CryptoCoin</button>
+<body class="flex flex-col h-screen">
+        <div class="background-container"></div>
 
-    <h2>Ulepszenia</h2>
-    <div class="shop">
-      <div class="upgrade">
-        <button id="doubleCoinsBtn">
-          Kup DoubleCoins (koszt: <span id="doubleCoinsCost">100</span>)
-        </button>
-        <p>Status: <span id="doubleCoinsStatus">Nieaktywne</span></p>
-      </div>
-    </div>
+        <main id="game-content" class="flex-grow flex flex-col justify-between p-4 overflow-y-auto relative z-10">
+        
+        <div id="view-tapper" class="flex flex-col items-center justify-between h-full text-center">
+            <div class="w-full flex justify-between items-center relative p-2">
+                 <button id="daily-rewards-button" class="bg-[var(--container-bg)] p-2 rounded-lg border border-[var(--border-color)] flex items-center justify-center space-x-2 text-sm md:text-base">
+                    <i class="fas fa-calendar-alt text-xl text-yellow-300"></i>
+                    <span data-translate-key="dailyRewardsButton">Nagrody Dziennie</span>
+                </button>
+                                <div class="flex space-x-2">
+                    <button id="lang-pl" class="lang-button active" data-lang="pl">PL</button>
+                    <button id="lang-en" class="lang-button" data-lang="en">EN</button>
+                </div>
+                 <div class="text-center">
+                    <div class="flex items-center justify-center space-x-2">
+                        <i class="fas fa-shield-alt text-yellow-400"></i>
+                        <span id="league-name" data-translate-key="leagueName" class="font-bold text-sm md:text-base">Bronze League</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2 mt-1">
+                        <div id="league-progress" class="bg-yellow-400 h-2 rounded-full" style="width: 0%;"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1" data-translate-key="nextLeagueText">Następna: <span id="next-league-req">10k</span></p>
+                </div>
+                                <button id="wallet-button" class="bg-[var(--container-bg)] p-2 rounded-lg border border-[var(--border-color)] flex items-center justify-center space-x-2 text-sm md:text-base">
+                    <i class="fas fa-wallet text-xl text-green-400"></i>
+                    <span data-translate-key="walletButton">Portfel</span>
+                </button>
+            </div>
 
-    <h2>Twoje Farmy</h2>
-    <div id="farmsContainer"></div>
-  </div>
+                        <div id="work-in-progress-message" data-translate-key="workInProgress">
+                Trwają prace i przepraszamy za utrudnienia.
+            </div>
 
-  <script src="script.js"></script>
+            <div class="text-center">
+                <p id="passive-income-display" class="text-sm text-cyan-400"></p>
+                <div class="flex items-center space-x-2 justify-center">
+                    <h1 id="balance-display" class="text-5xl font-orbitron font-bold">0</h1>
+                    <span class="text-3xl font-electrolize text-cyan-400">TRX</span>
+                </div>
+                <div class="flex items-center space-x-2 justify-center mt-1">
+                    <i class="fas fa-gem text-[var(--cyber-gem-color)] text-xl"></i>
+                    <span id="gems-display" class="text-2xl font-orbitron font-bold text-[var(--cyber-gem-color)]">0</span>
+                    <span class="text-xl font-electrolize text-[var(--cyber-gem-color)]" data-translate-key="gemsCurrency">Gemy</span>
+                </div>
+                <div id="accumulated-passive-container" class="mt-2">
+                    <p class="text-sm text-gray-400" data-translate-key="accumulatedText">Zgromadzone: <span id="accumulated-passive-display">0</span></p>
+                    <button id="collect-passive-button" onclick="collectPassiveIncome()" class="bg-green-600 text-white text-xs px-3 py-1 rounded-md mt-1 disabled-button" disabled data-translate-key="collectButton">Odbierz</button>
+                </div>
+            </div>
+
+            <div id="tapper-container" class="relative flex items-center justify-center w-full">
+                                <div id="logo-container" class="logo-container">
+                    <i class="fas fa-bolt logo-icon"></i>                     <div class="logo-text top">CyberCoin</div>
+                    <div class="logo-text bottom">Tapper</div>
+                    <div class="glitch-effect" data-text="CyberCoin Tapper"></div>
+            </div>
+                <div id="turbo-indicator" class="turbo-active-indicator hidden" data-translate-key="turboIndicator">TURBO</div>
+                <div id="event-indicator" class="event-active-indicator hidden" data-translate-key="eventIndicator">GORĄCZKA TRX!</div>
+            </div>
+            
+            <div class="w-full max-w-md">
+                <div class="flex justify-between items-center text-lg mb-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <span data-translate-key="energyDisplay">Energia</span>
+                        <span><span id="energy-display">1000</span> / <span id="max-energy-display">1000</span></span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="boost-button" class="flex items-center space-x-2 text-purple-400 font-bold">
+                            <i class="fas fa-rocket"></i>
+                            <span data-translate-key="boostButton">Boost</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-4 border-2 border-gray-600">
+                    <div id="energy-bar" class="progress-bar-fill h-full rounded-full" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="view-upgrades" class="hidden h-full overflow-y-auto p-4">
+            <h2 class="text-2xl font-orbitron text-center mb-6" data-translate-key="upgradesTitle">Ulepszenia</h2>
+            <div id="upgrades-list" class="space-y-4"></div>
+        </div>
+
+        <div id="view-farm" class="hidden h-full overflow-y-auto p-4">
+            <h2 class="text-2xl font-orbitron text-center mb-6" data-translate-key="farmTitle">Farma Danych</h2>
+            <div class="text-center mb-4 p-4 bg-[var(--container-bg)] rounded-lg border border-[var(--border-color)]">
+                <p class="text-gray-400" data-translate-key="incomePerHour">Dochód na godzinę</p>
+                <p id="farm-income-display" class="text-2xl font-orbitron font-bold text-cyan-400">0 TRX/h</p>
+                <div class="mt-2">
+                    <p class="text-sm text-gray-400" data-translate-key="accumulatedFarmText">Zgromadzone (do odbioru): <span id="accumulated-farm-display">0</span> TRX</p>
+                    <button id="collect-farm-button" onclick="collectPassiveIncome()" class="bg-green-600 text-white text-xs px-3 py-1 rounded-md mt-1 disabled-button" disabled data-translate-key="collectButton">Odbierz</button>
+                </div>
+            </div>
+            <div id="bots-list" class="space-y-4"></div>
+        </div>
+
+        <div id="view-shop" class="hidden h-full overflow-y-auto p-4">
+            <h2 class="text-2xl font-orbitron text-center mb-6" data-translate-key="shopTitle">Sklep z Kosmetykami</h2>
+            <div id="cosmetics-list" class="grid grid-cols-2 gap-4"></div>
+        </div>
+
+        <div id="view-inventory" class="hidden h-full overflow-y-auto p-4">
+            <h2 class="text-2xl font-orbitron text-center mb-6" data-translate-key="inventoryTitle">Ekwipunek</h2>
+            <div id="inventory-list" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            </div>
+        </div>
+
+        <div id="view-boosts" class="hidden h-full overflow-y-auto p-4">
+            <h2 class="text-2xl font-orbitron text-center mb-6" data-translate-key="boostsTitle">Wzmacniacze</h2>
+            <div class="space-y-4">
+                                <div class="p-4 bg-[var(--container-bg)] rounded-lg border border-[var(--border-color)] flex flex-col items-center text-center">
+                    <i class="fas fa-rocket text-4xl text-purple-400 mb-2"></i>
+                    <h3 class="text-xl font-bold font-orbitron" data-translate-key="turboBoostTitle">Turbo Boost</h3>
+                    <p class="text-sm text-gray-400 mt-1" data-translate-key="turboBoostDescription">Zwiększa zysk z kliknięcia x5. Trwa 30 sekund.</p>
+                    <div class="flex items-center space-x-2 mt-2">
+                        <i class="fas fa-clock text-gray-400"></i>
+                        <span id="turbo-cooldown-timer" class="text-sm font-electrolize text-gray-400" data-translate-key="readyText">Gotowy!</span>
+                    </div>
+                    <button id="activate-turbo-button" onclick="activateBoost('turbo')" class="mt-4 px-6 py-2 rounded-lg font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200" data-translate-key="activateButton">Aktywuj</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-tasks" class="hidden h-full overflow-y-auto p-4">
+            <h2 class="text-2xl font-orbitron text-center mb-6" data-translate-key="tasksTitle">Zadania</h2>
+            <div id="tasks-list" class="space-y-4"></div>
+            <h3 class="text-xl font-orbitron mt-8 mb-4" data-translate-key="challengesTitle">Wyzwania</h3>
+            <div id="challenges-list" class="space-y-4"></div>
+        </div>
+
+        <div id="view-leaderboard" class="hidden h-full overflow-y-auto p-4">
+            <h2 class="text-2xl font-orbitron text-center mb-6" data-translate-key="leaderboardTitle">Ranking</h2>
+            <div class="w-full text-center">
+                <div id="player-ranking" class="p-4 bg-[var(--player-highlight-bg)] rounded-lg border-2 border-[var(--player-highlight-border)] mb-4 animate-pulse-slow">
+                    <h3 class="text-xl font-orbitron font-bold" data-translate-key="yourRankTitle">Twój Ranking</h3>
+                    <p id="player-rank-display" class="text-3xl font-bold font-electrolize mt-2">--</p>
+                </div>
+            </div>
+            <div id="leaderboard-list" class="space-y-2"></div>
+        </div>
+    </main>
+
+        <div id="daily-rewards-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="modal p-6 bg-[var(--bg-color)] rounded-xl border-2 border-[var(--cyber-cyan)] shadow-lg max-w-sm w-full mx-4 relative">
+            <button id="close-daily-rewards-modal" class="absolute top-2 right-2 text-2xl text-red-500 hover:text-red-300">&times;</button>
+            <h3 class="text-2xl font-orbitron text-center mb-4" data-translate-key="dailyRewardsTitle">Nagrody Dziennie</h3>
+            <div id="daily-rewards-calendar" class="calendar-grid"></div>
+        </div>
+    </div>
+
+    <div id="wallet-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="modal p-6 bg-[var(--bg-color)] rounded-xl border-2 border-[var(--cyber-cyan)] shadow-lg max-w-sm w-full mx-4 relative">
+            <button id="close-wallet-modal" class="absolute top-2 right-2 text-2xl text-red-500 hover:text-red-300">&times;</button>
+            <h3 class="text-2xl font-orbitron text-center mb-4" data-translate-key="walletTitle">Mój Portfel</h3>
+            <div id="wallet-content">
+                <p class="text-xl font-bold mb-2">TRX: <span id="wallet-trx">0</span></p>
+                <p class="text-xl font-bold mb-2">Gemy: <span id="wallet-gems">0</span></p>
+            </div>
+        </div>
+    </div>
+
+        <div id="toast-container" class="fixed top-4 right-4 z-[65]"></div>
+
+        <button id="chat-fab" class="fixed w-16 h-16 rounded-full bg-[var(--cyber-cyan)] text-white text-3xl flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 z-[60]">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+
+        <div id="chat-modal" class="chat-modal">
+        <div class="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+            <h2 class="text-xl font-orbitron text-white" data-translate-key="chatTitle">Wsparcie Cyfrowe</h2>
+            <button id="close-chat-modal" class="text-2xl text-red-500 hover:text-red-300">&times;</button>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <div class="chat-message support" data-translate-key="chatWelcome">Witaj! Jak mogę Ci pomóc? Wybierz temat lub wpisz swoje pytanie.</div>
+        </div>
+        <div id="chat-topic-buttons" class="chat-topic-buttons">
+            <button class="chat-topic-button" data-topic="game_info" data-translate-key="topicGameInfo">Informacje o grze</button>
+            <button class="chat-topic-button" data-topic="bugs_report" data-translate-key="topicBugsReport">Zgłoś błąd</button>
+            <button class="chat-topic-button" data-topic="account_help" data-translate-key="topicAccountHelp">Pomoc z kontem</button>
+        </div>
+        <div class="chat-input-container">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Wpisz swoją wiadomość..." data-translate-placeholder="chatPlaceholder">
+            <button id="chat-send-button" class="chat-send-button" data-translate-key="chatSendButton">Wyślij</button>
+        </div>
+    </div>
+
+        <footer class="social-media-footer">
+        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+        <a href="#" aria-label="Telegram"><i class="fab fa-telegram-plane"></i></a>
+        <a href="#" aria-label="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
+        <button id="music-toggle-button" aria-label="Toggle music"><i class="fas fa-volume-up"></i></button>
+    </footer>
+
+        <script src="app.js"></script>
 </body>
 </html>
